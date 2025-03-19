@@ -1,0 +1,44 @@
+---
+title: "STAA57 Group Project"
+author: "Rebecca Han"
+date: "2025-03-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+https://data.ontario.ca/dataset/wages-by-education-level/resource/7b325fa1-e9d6-4329-a501-08cdc22a79df 
+
+(from crowdmark, requirements)
+
+Description of the variables and the data
+
+A little background about the data (who collected it in what context)
+
+What is the over all research question that you are trying to answer in your report
+
+Few tables (appropriately labeled)
+
+Few graphs (appropriately labeled)
+
+Use of confidence interval and test of hypothesis
+
+Use of bootstrapping
+
+Use of regression analysis (linear or nonlinear regression [week-9] or logistic regression[week-10] or decision tree/random forest [Week-11]). Interpretation of the regression parameters when applicable.
+
+Use of cross validation
+
+A final summary of your findings
+
+An appendix which shows all your codes
+
+3 marks will be kept aside for the presentation of your report (e.g. proper title, subtitle, graph size, graph placing, line spacing, proper annotation of your code etc.)
+
+TODO: delete above
+
+## TODO: title page 
+
+## 
