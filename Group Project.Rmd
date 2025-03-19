@@ -14,14 +14,24 @@ https://data.ontario.ca/dataset/wages-by-education-level/resource/7b325fa1-e9d6-
 (from crowdmark, requirements)
 
 Description of the variables and the data
+- miles
 
 A little background about the data (who collected it in what context)
+- bec
 
 What is the over all research question that you are trying to answer in your report
+- done
 
-Few tables (appropriately labeled)
+Few tables (appropriately labeled) - bec (do a bunch)
+- by age group 
+- by province
 
 Few graphs (appropriately labeled)
+- by gender (__ graph facet by gender, different colours for [] )
+- by year (line graph, different colours for each education level) - miles
+
+
+/////////////////// 
 
 Use of confidence interval and test of hypothesis
 
