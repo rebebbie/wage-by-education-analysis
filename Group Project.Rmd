@@ -41,4 +41,25 @@ TODO: delete above
 
 ## TODO: title page 
 
-## 
+## Description of the variables and the data
+
+- Wages is aligned with the "both sexes / female / male" columns. 
+
+```{r}
+library(tidyverse)
+df <- read_csv("data/wage-by-education-level.csv")
+colnames(df)[1] = "id" #renames _id to id
+
+#glimpse(df)
+df2 <- df %>% filter(Wages %in% c("Average hourly wage rate","Median hourly wage rate"))
+
+#df2 <- df %>% group_by(Wages) %>% summarise(N=n())
+
+df2
+```
+
+## A little background about the data (who collected it in what context)
+
+## What is the overall research question that you are trying to answer in your report
+
+Does education level have an impact on someone's wage? 
