@@ -7,6 +7,22 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+df <- read_csv("data/wage-by-education-level.csv")
+
+# Different education levels, other education levels are subsets of the
+# main 7 categories
+
+EDUCATION_LEVELS = c(
+  "0 - 8  years",
+  "Some high school",
+  "High school graduate",
+  "Some post-secondary",
+  "Post-secondary certificate or diploma",
+  "Bachelor's degree",
+  "Above bachelor's degree"
+)
 ```
 
 https://data.ontario.ca/dataset/wages-by-education-level/resource/7b325fa1-e9d6-4329-a501-08cdc22a79df 
@@ -28,7 +44,30 @@ Few tables (appropriately labeled) - bec (do a bunch)
 
 Few graphs (appropriately labeled)
 - by gender (__ graph facet by gender, different colours for [] )
+
 - by year (line graph, different colours for each education level) - miles
+
+```{r}
+
+by_year = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Median weekly wage rate",
+  Geography == "Canada",
+  `Age group` == "15 years and over"
+)
+
+by_year$`Education level` <- factor(by_year$`Education level`, levels = rev(EDUCATION_LEVELS))
+
+ggplot(by_year, aes(
+  x = YEAR,
+  y = `Both Sexes`,
+  color = `Education level`,
+)) + 
+  geom_point() + 
+  geom_line()
+
+```
 
 
 /////////////////// 
