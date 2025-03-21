@@ -23,6 +23,15 @@ EDUCATION_LEVELS = c(
   "Bachelor's degree",
   "Above bachelor's degree"
 )
+
+# Different age groups, other age groups are subsets of the
+# main 7 categories
+
+AGE_RANGES = c(
+  "15-24 years", 
+  "25-54 years", 
+  "55 years and over"
+)
 ```
 
 https://data.ontario.ca/dataset/wages-by-education-level/resource/7b325fa1-e9d6-4329-a501-08cdc22a79df 
@@ -41,6 +50,47 @@ What is the over all research question that you are trying to answer in your rep
 Few tables (appropriately labeled) - bec (do a bunch)
 - by age group 
 - by province
+
+```{r}
+age_table <- df %>% filter(`Age group` %in% AGE_RANGES) %>% 
+  group_by(Wages, `Age group`) %>%
+  summarize(
+    Wage = mean(`Both Sexes`)
+  ) 
+
+age_table2 <- age_table %>% pivot_wider(names_from=`Age group`, values_from=Wage)
+age_table2
+
+age_edu_count <- df %>% filter(
+  `Education level` %in% EDUCATION_LEVELS,
+  `Age group` %in% AGE_RANGES
+) %>%
+  group_by(`Age group`,`Education level`) %>%
+  summarize(
+    count=n()
+  )
+age_edu_count2 <- age_edu_count %>% pivot_wider(names_from=`Age group`, values_from=`count`)
+age_edu_count2
+
+
+age_edu_count <- df %>% filter(
+  `Education level` %in% EDUCATION_LEVELS,
+  `Age group` %in% AGE_RANGES,
+  YEAR == 2019,
+  `Type of work` == "Both full- and part-time",
+  Wages == "Average hourly wage rate",
+  Geography == "Canada"
+)
+age_edu_count
+
+age_edu_count2 <- age_edu_count %>% 
+  pivot_wider(
+    c(`Education level`),
+    names_from=`Age group`, 
+    values_from=`Both Sexes`
+  )
+age_edu_count2
+```
 
 Few graphs (appropriately labeled)
 - by gender (__ graph facet by gender, different colours for [] )
@@ -102,7 +152,7 @@ colnames(df)[1] = "id" #renames _id to id
 #glimpse(df)
 df2 <- df %>% filter(Wages %in% c("Average hourly wage rate","Median hourly wage rate"))
 
-#df2 <- df %>% group_by(Wages) %>% summarise(N=n())
+#df2 <- df %>% group_by(`Age group`) %>% summarise(N=n())
 
 df2
 ```
