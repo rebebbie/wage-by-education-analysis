@@ -52,27 +52,15 @@ Few tables (appropriately labeled) - bec (do a bunch)
 - by province
 
 ```{r}
-age_table <- df %>% filter(`Age group` %in% AGE_RANGES) %>% 
-  group_by(Wages, `Age group`) %>%
-  summarize(
-    Wage = mean(`Both Sexes`)
-  ) 
-
-age_table2 <- age_table %>% pivot_wider(names_from=`Age group`, values_from=Wage)
-age_table2
-
-age_edu_count <- df %>% filter(
-  `Education level` %in% EDUCATION_LEVELS,
-  `Age group` %in% AGE_RANGES
-) %>%
-  group_by(`Age group`,`Education level`) %>%
-  summarize(
-    count=n()
-  )
-age_edu_count2 <- age_edu_count %>% pivot_wider(names_from=`Age group`, values_from=`count`)
-age_edu_count2
+#age_table <- df %>% filter(`Age group` %in% AGE_RANGES) %>% 
+#  group_by(Wages, `Age group`) %>%
+#  summarize(
+#    Wage = mean(`Both Sexes`)
+#  ) 
+#age_table2 <- age_table %>% pivot_wider(names_from=`Age group`, values_from=Wage)
 
 
+# avg hourly wage rate for each age group by education level
 age_edu_count <- df %>% filter(
   `Education level` %in% EDUCATION_LEVELS,
   `Age group` %in% AGE_RANGES,
@@ -81,7 +69,6 @@ age_edu_count <- df %>% filter(
   Wages == "Average hourly wage rate",
   Geography == "Canada"
 )
-age_edu_count
 
 age_edu_count2 <- age_edu_count %>% 
   pivot_wider(
@@ -98,7 +85,6 @@ Few graphs (appropriately labeled)
 - by year (line graph, different colours for each education level) - miles
 
 ```{r}
-
 by_year = df %>% filter(
   `Type of work` == "Both full- and part-time",
   `Education level` %in% EDUCATION_LEVELS,
@@ -122,9 +108,88 @@ ggplot(by_year, aes(
 
 /////////////////// 
 
-Use of confidence interval and test of hypothesis
+## Use of confidence interval and test of hypothesis
 
-Use of bootstrapping
+Let us now test our hypothesis of the paired t-test $$H_0:$$ There is no difference between Education and Wage vs. $$H_a:$$ There is a difference between Education and Wage
+
+- hypothesis test of avg hourly wage
+
+```{r}
+df_hourly = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average hourly wage rate",
+  Geography == "Canada"
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  )
+  
+df_hourly %>%
+  with(t.test(x=Education, y=`Both Sexes`, paired = TRUE)) 
+```
+
+- hypothesis test of avg weekly wage
+
+```{r}
+df_weekly = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average weekly wage rate",
+  Geography == "Canada"
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  )
+  
+df_weekly %>%
+  with(t.test(x=Education, y=`Both Sexes`, paired = TRUE)) 
+```
+
+## Use of bootstrapping
+
+Since the data from our dataset is aggregated, we should use bootstrapping to ensure that our hypothesis holds even when there are multiple potential samples. 
+
+```{r}
+hourly_df = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average hourly wage rate",
+  Geography == "Canada"
+)
+
+set.seed(111)
+pop=rnorm(60000, mean=160, sd=10) # Hypothetical population
+set.seed(999)
+obs.sam=sample(pop,size=10) # Observed sample
+boot_function=function(){
+boot_s = sample(obs.sam, size=10, replace=TRUE)
+return(mean(boot_s))
+}
+boot_X_bar = replicate(100000,boot_function()) # fake replication of samples
+#95% bootstrap CI
+quantile(boot_X_bar, c(0.025,0.975))
+
+```
+
+
+///////////////////
 
 Use of regression analysis (linear or nonlinear regression [week-9] or logistic regression[week-10] or decision tree/random forest [Week-11]). Interpretation of the regression parameters when applicable.
 
