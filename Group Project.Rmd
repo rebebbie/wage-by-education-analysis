@@ -177,12 +177,13 @@ hourly_df = df %>% filter(
 set.seed(100)
 #obs.sam=sample(hourly_df,size=10) # Observed sample
 boot_function=function(){
-boot_s = sample(hourly_df$`Both Sexes`, size=10, replace=TRUE)
-return(mean(boot_s))
+  boot_s = sample(hourly_df$`Both Sexes`, size=10, replace=TRUE)
+  return(boot_s)
 }
-boot_X_bar = replicate(100000,boot_function()) # fake replication of samples
+boot_X_bar = replicate(100000,boot_function()) 
 #95% bootstrap CI
 quantile(boot_X_bar, c(0.025,0.975))
+
 
 ```
 
@@ -190,6 +191,31 @@ quantile(boot_X_bar, c(0.025,0.975))
 ///////////////////
 
 Use of regression analysis (linear or nonlinear regression [week-9] or logistic regression[week-10] or decision tree/random forest [Week-11]). Interpretation of the regression parameters when applicable.
+
+```{r}
+df_hourly = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average hourly wage rate",
+  Geography == "Canada",
+  YEAR == 2019 #so that we don't have to account for inflation
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  )
+
+m <- lm(df_hourly$`Both Sexes` ~ df_hourly$Education)
+summary(m)
+```
+
 
 Use of cross validation
 
