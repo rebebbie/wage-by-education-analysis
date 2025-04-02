@@ -2,7 +2,9 @@
 title: "STAA57 Group Project"
 author: "Rebecca Han and Miles Bernstein"
 date: "2025-03-19"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -15,6 +17,17 @@ df <- read_csv("data/wage-by-education-level.csv")
 # main 7 categories
 
 EDUCATION_LEVELS = c(
+  "0 - 8  years",
+  "Some high school",
+  "High school graduate",
+  "Some post-secondary",
+  "Post-secondary certificate or diploma",
+  "Bachelor's degree",
+  "Above bachelor's degree"
+)
+
+EDUCATION_LEVELS_AND_ALL = c(
+  "Total, all education levels",
   "0 - 8  years",
   "Some high school",
   "High school graduate",
@@ -81,24 +94,49 @@ collective bargaining data, research, and analysis. This is what the Ministry st
 
 
 ## 3 What is the over all research question that you are trying to answer in your report
-Does education level have an impact on someone's wage? 
+Using the wage data from 1997-2019, we are going to investigate the various reasons why wages vary across the population. Our main goal is to discover what factors lead to higher wages and discover trends that may emerge from the data. Our research goals can broken down into three main questions:
+
+1. How much does education level have an impact on someone's wage?
+2. What other factors impact wages?
+3. How have these factors impacted wages over time?
 
 ## 4 Tables 
 
-#### 4.1 Average hourly wage rate for each age group by education level
+#### 4.1 Average hourly wage rate and population of each education level
+```{r echo=FALSE}
+age_edu_count <- df %>% filter(
+  `Education level` %in% EDUCATION_LEVELS_AND_ALL,
+  `Age group` == "15 years and over",
+  YEAR == 2019,
+  `Type of work` == "Both full- and part-time",
+  Wages %in% c("Average hourly wage rate", "Total employees"),
+  Geography == "Canada"
+)
+
+age_edu_count2 <- age_edu_count %>% 
+  pivot_wider(
+    c(`Education level`),
+    names_from=`Wages`, 
+    values_from=`Both Sexes`
+  ) %>%
+  mutate(`Total employees` = `Total employees` * 1000)
+
+age_edu_count2 %>%
+  rename(
+    `Number of Employees` = `Total employees`,
+    `Average Hourly Wage` = `Average hourly wage rate`
+  ) %>%
+  knitr::kable()
+```
+
+This table shows the amount of employees, and their average hourly wage for each education level in 2019. There's also an aggregate of all education levels. The table is sorted in order of least, to most formal education. 
+
+#### 4.2 Average hourly wage rate for each age group by education level
 
 ```{r echo=FALSE}
-#age_table <- df %>% filter(`Age group` %in% AGE_RANGES) %>% 
-#  group_by(Wages, `Age group`) %>%
-#  summarize(
-#    Wage = mean(`Both Sexes`)
-#  ) 
-#age_table2 <- age_table %>% pivot_wider(names_from=`Age group`, values_from=Wage)
-
-
 # avg hourly wage rate for each age group by education level
 age_edu_count <- df %>% filter(
-  `Education level` %in% EDUCATION_LEVELS,
+  `Education level` %in% EDUCATION_LEVELS_AND_ALL,
   `Age group` %in% AGE_RANGES,
   YEAR == 2019,
   `Type of work` == "Both full- and part-time",
@@ -118,8 +156,31 @@ age_edu_count2 %>%
 
 ```
 
-#### 4.2 by province (unsure if needed) 
-#### 4.3 by gender (unsure if needed)
+This table uses the same categorization of education levels, but instead we look at the average hourly wage breakdown by age demographic. 
+
+#### 4.3 Male and Female Wage by education level
+
+```{r echo=FALSE}
+age_edu_count <- df %>% filter(
+  `Education level` %in% EDUCATION_LEVELS_AND_ALL,
+  `Age group` == "15 years and over",
+  YEAR == 2019,
+  `Type of work` == "Both full- and part-time",
+  Wages == "Average hourly wage rate",
+  `Geography` == "Canada"
+) %>%
+  select(`Education level`, Male, Female) %>%
+  mutate(`Wage Difference` = Male - Female) %>%
+  rename(
+    `Average Hourly Male Wage` = Male,
+    `Average Hourly Female Wage` = Female
+  ) 
+  
+age_edu_count %>%
+  knitr::kable()
+```
+
+This table tracks the hourly wage of Males and Females respectively. It also shows how education levels affect the discrepancy. This table also shows the difference between Male and Female hourly wages.
 
 ## 5 Graphs 
 
@@ -129,7 +190,7 @@ age_edu_count2 %>%
 by_year = df %>% filter(
   `Type of work` == "Both full- and part-time",
   `Education level` %in% EDUCATION_LEVELS,
-  Wages == "Median weekly wage rate",
+  Wages == "Average hourly wage rate",
   Geography == "Canada",
   `Age group` == "15 years and over"
 )
@@ -142,21 +203,19 @@ ggplot(by_year, aes(
   color = `Education level`,
 )) + 
   geom_point() + 
-  geom_line()
-
+  geom_line() + 
+  ggtitle("Average Hourly Wage by Year") +
+  xlab("Year") + ylab("Average Hourly Wage")
 ```
-
-#### 5.2 Total salary of different education group (unsure if needed)
-
-
+This graph shows the hourly wages of each education level from the years 1997-2019.
 
 ## 6 Use of confidence interval and test of hypothesis
 
 Let us now test our hypothesis of the paired t-test $$H_0:$$ There is no difference between Education and Wage vs. $$H_a:$$ There is a difference between Education and Wage
 
-- hypothesis test of avg hourly wage
+#### 6.1 Hypothesis Test of Average Hourly Wage
 
-```{r}
+```{r echo=FALSE}
 df_hourly = df %>% filter(
   `Type of work` == "Both full- and part-time",
   `Education level` %in% EDUCATION_LEVELS,
@@ -179,9 +238,9 @@ df_hourly %>%
   with(t.test(x=Education, y=`Both Sexes`, paired = TRUE)) 
 ```
 
-- hypothesis test of avg weekly wage
+#### 6.2 Hypothesis Test of Average Weekly Wage
 
-```{r}
+```{r echo=FALSE}
 df_weekly = df %>% filter(
   `Type of work` == "Both full- and part-time",
   `Education level` %in% EDUCATION_LEVELS,
@@ -208,7 +267,7 @@ df_weekly %>%
 
 Since the data from our dataset is aggregated, we should use bootstrapping to ensure that our hypothesis holds even when there are multiple potential samples. 
 
-```{r}
+```{r echo=FALSE}
 hourly_df = df %>% filter(
   `Type of work` == "Both full- and part-time",
   `Education level` %in% EDUCATION_LEVELS,
@@ -229,12 +288,9 @@ quantile(boot_X_bar, c(0.025,0.975))
 
 ```
 
+## 8 Regression analysis 
 
-///////////////////
-
-Use of regression analysis (linear or nonlinear regression [week-9] or logistic regression[week-10] or decision tree/random forest [Week-11]). Interpretation of the regression parameters when applicable.
-
-```{r}
+```{r echo=FALSE}
 df_hourly = df %>% filter(
   `Type of work` == "Both full- and part-time",
   `Education level` %in% EDUCATION_LEVELS,
@@ -258,12 +314,16 @@ m <- lm(df_hourly$`Both Sexes` ~ df_hourly$Education)
 summary(m)
 ```
 
+## 9 Use of cross validation
 
-## 8 Use of cross validation
+## 10 A final summary of your findings
 
-## 9 A final summary of your findings
+This table shows a clear trend that more education results in a a higher wage. This comes with an exception, as high school graduates on average have higher wages then those with some post-secondary experience. This table is useful in demonstrating that more education usually leads to higher wages.
 
-## Appendix which shows all your codes
+Here we see another trend that wages usually increase with age.
+
+
+## 11 Appendix which shows all your codes
 
 
 ```{r}
