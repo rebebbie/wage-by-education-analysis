@@ -1,6 +1,6 @@
 ---
 title: "STAA57 Group Project"
-author: "Rebecca Han and Miles Bernstein"
+author: "Miles Bernstein and Rebecca Han"
 date: "2025-03-19"
 output:
   html_document: default
@@ -211,7 +211,7 @@ This graph shows the hourly wages of each education level from the years 1997-20
 
 ## 6 Use of confidence interval and test of hypothesis
 
-Let us now test our hypothesis of the paired t-test $$H_0:$$ There is no difference between Education and Wage vs. $$H_a:$$ There is a difference between Education and Wage
+Let us now test our hypothesis of the paired t-test $$H_0:$$ There is no average difference between Education and Wage vs. $$H_a:$$ There is an average difference between Education and Wage
 
 #### 6.1 Hypothesis Test of Average Hourly Wage
 
@@ -238,6 +238,8 @@ df_hourly %>%
   with(t.test(x=Education, y=`Both Sexes`, paired = TRUE)) 
 ```
 
+This paired t-test tells us that there is a relationship between Education and Average Hourly Wage. The p-value is very small (much smaller than $\alpha=0.05$) and 0 is not in the 95% confidence interval. Therefore, we can confidently reject the null hypothesis: $H_0:$ mean difference between the two groups is 0.  
+
 #### 6.2 Hypothesis Test of Average Weekly Wage
 
 ```{r echo=FALSE}
@@ -263,6 +265,8 @@ df_weekly %>%
   with(t.test(x=Education, y=`Both Sexes`, paired = TRUE)) 
 ```
 
+This paired t-test tells us that there is a relationship between Education and Average Weekly Wage. The p-value is very small (much smaller than $\alpha=0.05$) and 0 is not in the 95% confidence interval. Therefore, we can confidently reject the null hypothesis: $H_0:$ mean difference between the two groups is 0.  
+
 ## 7 Use of bootstrapping
 
 Since the data from our dataset is aggregated, we should use bootstrapping to ensure that our hypothesis holds even when there are multiple potential samples. 
@@ -273,20 +277,33 @@ hourly_df = df %>% filter(
   `Education level` %in% EDUCATION_LEVELS,
   Wages == "Average hourly wage rate",
   YEAR == "2019"
-)
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  ) 
 
 set.seed(100)
-#obs.sam=sample(hourly_df,size=10) # Observed sample
+
+d = na.omit(as.data.frame(cbind(hourly_df$`Both Sexes`,hourly_df$Education)))
+#d
 boot_function=function(){
-  boot_s = sample(hourly_df$`Both Sexes`, size=10, replace=TRUE)
-  return(boot_s)
+  boot.d = d %>% sample_n(nrow(d), replace=T)
+  m2 = lm(V1~V2, data=boot.d)
+  s = coef(m2)[2]
+  return(s)
 }
-boot_X_bar = replicate(100000,boot_function()) 
-#95% bootstrap CI
-quantile(boot_X_bar, c(0.025,0.975))
-
-
+output = replicate(1000, boot_function())
+quantile(output, c(0.025,0.975))
 ```
+0 is outside of this interval, meaning that we can reject the hypothesis: $\beta_2=0$. Meaning, for every increase in education level, there is a non-zero increase in average hourly wage. Therefore, education level has an impact on average hourly wage.
 
 ## 8 Regression analysis 
 
@@ -314,7 +331,26 @@ m <- lm(df_hourly$`Both Sexes` ~ df_hourly$Education)
 summary(m)
 ```
 
+From the summary chart, we see that for every one level of increase in education, there is an average of 3.0647 dollar increase in the average hourly wage rate. However, we notice that our R-Squared and adjusted R-Squared values are 0.62 and 0.61 respectively, which means that education level alone can only explain around 62% of variability in hourly wage rate on our filtered dataset. 
+
 ## 9 Use of cross validation
+
+```{r}
+d=df_hourly %>% mutate(group_ind = sample(c("train","test"),
+size=nrow(df_hourly),
+prob = c(0.7,0.3),
+replace = T))
+
+set.seed(100)
+m=lm(d$`Both Sexes`~d$Education, data = d %>% filter(group_ind=="train"), na.rm=T)
+#mse for training data set
+y.hat = predict(m)
+mean((d$`Both Sexes`[d$group_ind=="train"] - y.hat)**2)
+y.hat = na.omit(predict(m, newdata = d %>% filter(group_ind=="test")))
+mean((d$`Both Sexes`[d$group_ind=="test"] - y.hat)**2)
+```
+
+The testing MSE is similar to the training MSE, which means that our model is a decent indicator of the trends in the data. It is slightly higher, which can indicate overfitting, but since it's not higher by much, there isn't too much cause for concern. 
 
 ## 10 A final summary of your findings
 
