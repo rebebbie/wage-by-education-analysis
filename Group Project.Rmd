@@ -3,8 +3,8 @@ title: "STAA57 Group Project"
 author: "Miles Bernstein and Rebecca Han"
 date: "2025-03-19"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -186,6 +186,10 @@ This table tracks the hourly wage of Males and Females respectively. It also sho
 
 #### 5.1 Tracking salary by education level over time
 
+
+\
+
+
 ```{r echo=FALSE}
 by_year = df %>% filter(
   `Type of work` == "Both full- and part-time",
@@ -207,6 +211,7 @@ ggplot(by_year, aes(
   ggtitle("Average Hourly Wage by Year") +
   xlab("Year") + ylab("Average Hourly Wage")
 ```
+
 This graph shows the hourly wages of each education level from the years 1997-2019.
 
 ## 6 Use of confidence interval and test of hypothesis
@@ -335,7 +340,7 @@ From the summary chart, we see that for every one level of increase in education
 
 ## 9 Use of cross validation
 
-```{r}
+```{r echo=FALSE}
 d=df_hourly %>% mutate(group_ind = sample(c("train","test"),
 size=nrow(df_hourly),
 prob = c(0.7,0.3),
@@ -359,18 +364,262 @@ This table shows a clear trend that more education results in a a higher wage. T
 Here we see another trend that wages usually increase with age.
 
 
-## 11 Appendix which shows all your codes
+## 11 Appendix
 
 
-```{r}
+```{r eval=FALSE}
+# Data has been sourced from the following dataset
+# https://data.ontario.ca/dataset/wages-by-education-level/resource/7b325fa1-e9d6-4329-a501-08cdc22a79df
+# Note that the dataset has since updated since prodcing this report, which removed data about other provinces, and removed years 1997-2005.
+
 library(tidyverse)
 df <- read_csv("data/wage-by-education-level.csv")
-colnames(df)[1] = "id" #renames _id to id
 
-#glimpse(df)
-df2 <- df %>% filter(Wages %in% c("Average hourly wage rate","Median hourly wage rate"))
+# Define constant to help with data queries
 
-#df2 <- df %>% group_by(`Age group`) %>% summarise(N=n())
+# Different education levels, other education levels are subsets of the main 7 categories
+EDUCATION_LEVELS = c(
+  "0 - 8  years",
+  "Some high school",
+  "High school graduate",
+  "Some post-secondary",
+  "Post-secondary certificate or diploma",
+  "Bachelor's degree",
+  "Above bachelor's degree"
+)
 
-df2
+EDUCATION_LEVELS_AND_ALL = c(
+  "Total, all education levels",
+  "0 - 8  years",
+  "Some high school",
+  "High school graduate",
+  "Some post-secondary",
+  "Post-secondary certificate or diploma",
+  "Bachelor's degree",
+  "Above bachelor's degree"
+)
+
+# Different age groups, other age groups are subsets of the main 7 categories
+AGE_RANGES = c(
+  "15-24 years", 
+  "25-54 years", 
+  "55 years and over"
+)
+
+# 4.1 Average hourly wage rate and population of each education level
+
+#Create filtered table
+hourly_wage <- df %>% filter(
+  `Education level` %in% EDUCATION_LEVELS_AND_ALL,
+  `Age group` == "15 years and over",
+  YEAR == 2019,
+  `Type of work` == "Both full- and part-time",
+  Wages %in% c("Average hourly wage rate", "Total employees"),
+  Geography == "Canada"
+)
+
+#Create pivot table
+hourly_wage2 <- hourly_wage %>% 
+  pivot_wider(
+    c(`Education level`),
+    names_from=`Wages`, 
+    values_from=`Both Sexes`
+  ) %>%
+  mutate(`Total employees` = `Total employees` * 1000)
+
+# Render table
+hourly_wage %>%
+  rename(
+    `Number of Employees` = `Total employees`,
+    `Average Hourly Wage` = `Average hourly wage rate`
+  ) %>%
+  knitr::kable()
+
+# 4.2 Average hourly wage rate for each age group by education level
+
+# Create filtered table
+age_edu_count <- df %>% filter(
+  `Education level` %in% EDUCATION_LEVELS_AND_ALL,
+  `Age group` %in% AGE_RANGES,
+  YEAR == 2019,
+  `Type of work` == "Both full- and part-time",
+  Wages == "Average hourly wage rate",
+  Geography == "Canada"
+)
+
+#Create pivot table
+age_edu_count2 <- age_edu_count %>% 
+  pivot_wider(
+    c(`Education level`),
+    names_from=`Age group`, 
+    values_from=`Both Sexes`
+  )
+
+# Render table
+age_edu_count2 %>%
+  knitr::kable()
+
+# 4.3 Male and Female Wage by education level
+
+gender_diff <- df %>% filter(
+  `Education level` %in% EDUCATION_LEVELS_AND_ALL,
+  `Age group` == "15 years and over",
+  YEAR == 2019,
+  `Type of work` == "Both full- and part-time",
+  Wages == "Average hourly wage rate",
+  `Geography` == "Canada"
+) %>%
+  select(`Education level`, Male, Female) %>%
+  mutate(`Wage Difference` = Male - Female) %>%
+  rename(
+    `Average Hourly Male Wage` = Male,
+    `Average Hourly Female Wage` = Female
+  ) 
+  
+gender_diff %>%
+  knitr::kable()
+
+# 5.1 Tracking salary by education level over time
+by_year = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average hourly wage rate",
+  Geography == "Canada",
+  `Age group` == "15 years and over"
+)
+
+by_year$`Education level` <- factor(by_year$`Education level`, levels = rev(EDUCATION_LEVELS))
+
+ggplot(by_year, aes(
+  x = YEAR,
+  y = `Both Sexes`,
+  color = `Education level`,
+)) + 
+  geom_point() + 
+  geom_line() + 
+  ggtitle("Average Hourly Wage by Year") +
+  xlab("Year") + ylab("Average Hourly Wage")
+
+# 6.1 Hypothesis Test of Average Hourly Wage
+
+df_hourly = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average hourly wage rate",
+  Geography == "Canada"
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  )
+  
+df_hourly %>%
+  with(t.test(x=Education, y=`Both Sexes`, paired = TRUE))
+
+# 6.2 Hypothesis Test of Average Weekly Wage
+
+df_weekly = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average weekly wage rate",
+  Geography == "Canada"
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  )
+  
+df_weekly %>%
+  with(t.test(x=Education, y=`Both Sexes`, paired = TRUE))
+
+# 7 Use of bootstrapping
+
+hourly_df = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average hourly wage rate",
+  YEAR == "2019"
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  ) 
+
+set.seed(100)
+
+d = na.omit(as.data.frame(cbind(hourly_df$`Both Sexes`,hourly_df$Education)))
+
+boot_function=function(){
+  boot.d = d %>% sample_n(nrow(d), replace=T)
+  m2 = lm(V1~V2, data=boot.d)
+  s = coef(m2)[2]
+  return(s)
+}
+
+output = replicate(1000, boot_function())
+quantile(output, c(0.025,0.975))
+
+# 8 Regression analysis 
+
+df_hourly = df %>% filter(
+  `Type of work` == "Both full- and part-time",
+  `Education level` %in% EDUCATION_LEVELS,
+  Wages == "Average hourly wage rate",
+  Geography == "Canada",
+  YEAR == 2019 #so that we don't have to account for inflation
+) %>%
+  mutate(
+    Education = case_when(
+    `Education level` == "0 - 8 years" ~ 1, 
+    `Education level` == "Some high school" ~ 2, 
+    `Education level` == "High school graduate" ~ 3, 
+    `Education level` == "Some post-secondary" ~ 4, 
+    `Education level` == "Post-secondary certificate or diploma" ~ 5, 
+    `Education level` == "Bachelor's degree" ~ 6, 
+    `Education level` == "Above bachelor's degree" ~ 7, 
+    )
+  )
+
+m <- lm(df_hourly$`Both Sexes` ~ df_hourly$Education)
+summary(m)
+
+# 9 Use of cross validation
+
+d=df_hourly %>% mutate(
+  group_ind = sample(c("train","test"),
+  size=nrow(df_hourly),
+  prob = c(0.7,0.3),
+  replace = T)
+)
+
+set.seed(100)
+m=lm(d$`Both Sexes`~d$Education, data = d %>% filter(group_ind=="train"), na.rm=T)
+
+#mse for training data set
+y.hat = predict(m)
+mean((d$`Both Sexes`[d$group_ind=="train"] - y.hat)**2)
+
+y.hat = na.omit(predict(m, newdata = d %>% filter(group_ind=="test")))
+mean((d$`Both Sexes`[d$group_ind=="test"] - y.hat)**2)
 ```
