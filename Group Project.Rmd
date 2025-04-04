@@ -369,15 +369,20 @@ Here we see another trend that wages usually increase with age.
 
 ```{r eval=FALSE}
 # Data has been sourced from the following dataset
-# https://data.ontario.ca/dataset/wages-by-education-level/resource/7b325fa1-e9d6-4329-a501-08cdc22a79df
-# Note that the dataset has since updated since prodcing this report, which removed data about other provinces, and removed years 1997-2005.
+
+# https://data.ontario.ca/dataset/wages-by-education-level/resource/
+# 7b325fa1-e9d6-4329-a501-08cdc22a79df
+
+# Note that the dataset has since updated since prodcing this report, which 
+# removed data about other provinces, and removed years 1997-2005.
 
 library(tidyverse)
 df <- read_csv("data/wage-by-education-level.csv")
 
 # Define constant to help with data queries
 
-# Different education levels, other education levels are subsets of the main 7 categories
+# Different education levels, other education levels are subsets of the main 
+# 7 categories
 EDUCATION_LEVELS = c(
   "0 - 8  years",
   "Some high school",
@@ -488,7 +493,8 @@ by_year = df %>% filter(
   `Age group` == "15 years and over"
 )
 
-by_year$`Education level` <- factor(by_year$`Education level`, levels = rev(EDUCATION_LEVELS))
+by_year$`Education level` <- 
+  factor(by_year$`Education level`, levels = rev(EDUCATION_LEVELS))
 
 ggplot(by_year, aes(
   x = YEAR,
@@ -614,7 +620,11 @@ d=df_hourly %>% mutate(
 )
 
 set.seed(100)
-m=lm(d$`Both Sexes`~d$Education, data = d %>% filter(group_ind=="train"), na.rm=T)
+m=lm(
+  d$`Both Sexes`~d$Education,
+  data = d %>% filter(group_ind=="train"),
+  na.rm=T
+)
 
 #mse for training data set
 y.hat = predict(m)
